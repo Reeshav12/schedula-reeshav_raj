@@ -12,18 +12,18 @@ export class AuthService {
   ) {}
 
   async signup(name: string, email: string, password: string, role: Role) {
-    const existing = this.usersService.findByEmail(email);
+    const existing = await this.usersService.findByEmail(email);
     if (existing) throw new BadRequestException('Email already registered');
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = this.usersService.create(name, email, hashed, role);
+    const user = await this.usersService.create(name, email, hashed, role);
 
     const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
     return { message: 'Signup successful', token };
   }
 
   async login(email: string, password: string) {
-    const user = this.usersService.findByEmail(email);
+    const user = await this.usersService.findByEmail(email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const match = await bcrypt.compare(password, user.password);
