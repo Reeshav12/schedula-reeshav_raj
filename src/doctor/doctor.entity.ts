@@ -34,6 +34,9 @@ export class Doctor {
   @Column({ nullable: true })
   bio: string;
 
+  @Column({ default: true })
+  isAvailable: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 }
