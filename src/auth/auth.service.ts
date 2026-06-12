@@ -3,12 +3,17 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcryptjs';
 import { Role } from '../users/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Doctor } from '../doctor/doctor.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    @InjectRepository(Doctor)
+    private doctorRepository: Repository<Doctor>,
   ) {}
 
   async signup(name: string, email: string, password: string, role: Role) {
@@ -29,7 +34,18 @@ export class AuthService {
     const match = await bcrypt.compare(password, user.password);
     if (!match) throw new UnauthorizedException('Invalid credentials');
 
-    const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+    let doctorId: number | null = null;
+    if (user.role === Role.DOCTOR) {
+      const doctor = await this.doctorRepository.findOne({ where: { userId: user.id } });
+      doctorId = doctor ? doctor.id : null;
+    }
+
+    const token = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      doctorId,
+    });
     return { message: 'Login successful', token };
   }
 }
